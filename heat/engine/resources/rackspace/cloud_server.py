@@ -378,6 +378,7 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
             cmd = "bash -ex /root/heat-script.sh > /root/heat-script.log 2>&1"
             self._run_ssh_command(cmd)
 
+        logger.debug("Create complete of %s" % str(self))
         return True
 
     # TODO(jason): Make this consistent with Instance and inherit
@@ -412,6 +413,7 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
             logger.info("Cloud Server rename not supported.")
 
         if 'Metadata' in tmpl_diff:
+            logger.debug("Updating metadata for %s" % str(self))
             self.metadata = json_snippet['Metadata']
             metadata_string = json.dumps(self.metadata)
 
@@ -429,6 +431,7 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
             resize = scheduler.TaskRunner(nova_utils.check_resize,
                                           self.server,
                                           self.flavor)
+            logger.info("Starting resize of %s" % str(self))
             resize.start()
             return resize
 

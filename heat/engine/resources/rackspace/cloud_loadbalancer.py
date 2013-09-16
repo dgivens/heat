@@ -304,7 +304,11 @@ class CloudLoadBalancer(rackspace_resource.RackspaceResource):
         return loadbalancer
 
     def check_create_complete(self, loadbalancer):
-        return self._check_status(loadbalancer, ['ACTIVE'])
+        if not self._check_status(loadbalancer, ['ACTIVE']):
+            return False
+
+        logger.debug("Create complete of %s" % str(self))
+        return True
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
         """
@@ -347,13 +351,21 @@ class CloudLoadBalancer(rackspace_resource.RackspaceResource):
             new_nodes = [self.clb.Node(**new[lb_node])
                          for lb_node in added]
             if new_nodes:
+                logger.debug("Adding %s nodes to %s" % (len(new_nodes),
+                             str(self)))
                 loadbalancer.add_nodes(new_nodes)
 
             #Delete loadbalancers in the old dict that are not in the new dict.
+            if len(deleted):
+                logger.debug("Deleting %s nodes from %s" % (len(deleted),
+                             str(self)))
             for node in deleted:
                 old[node].delete()
 
             #Update nodes that have been changed
+            if len(updated):
+                logger.debug("Updating %s nodes in %s" % (len(updated),
+                             str(self)))
             for node in updated:
                 node_changed = False
                 for attribute in new[node].keys():
@@ -373,6 +385,7 @@ class CloudLoadBalancer(rackspace_resource.RackspaceResource):
         else:
             if loadbalancer.status != 'DELETED':
                 loadbalancer.delete()
+                logger.debug("Deleted %s" % str(self))
                 self.resource_id_set(None)
 
     def _remove_none(self, property_dict):

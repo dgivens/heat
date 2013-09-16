@@ -132,7 +132,6 @@ class CloudDBInstance(rackspace_resource.RackspaceResource):
         self.users = self.properties.get('Users', None)
 
         # create db instance
-        logger.info("Creating Cloud DB instance %s" % self.sqlinstancename)
         instance = self.cloud_db().create(self.sqlinstancename,
                                           flavor=self.flavor,
                                           volume=self.volume)
@@ -150,42 +149,45 @@ class CloudDBInstance(rackspace_resource.RackspaceResource):
         instance.get()  # get updated attributes
         if instance.status == 'ERROR':
             instance.delete()
-            raise exception.Error("Cloud DB instance creation failed.")
+            raise exception.Error("Create failed of %s" % str(self))
 
         if instance.status != 'ACTIVE':
             return False
 
-        logger.info("Cloud DB instance %s created (flavor:%s, volume:%s)" %
-                    (self.sqlinstancename, self.flavor, self.volume))
+        logger.info("Create complete of %s" % str(self))
         # create databases
         for database in self.databases:
+            logger.debug("Creating database %s on %s" % (database['Name'],
+                         str(self)))
             instance.create_database(
                 database['Name'],
                 character_set=database['Character_set'],
                 collate=database['Collate'])
-            logger.info("Database %s created on cloud DB instance %s" %
-                        (database['Name'], self.sqlinstancename))
+            logger.info("Database %s created on %s" % (database['Name'],
+                        str(self)))
 
         # add users
         dbs = []
         for user in self.users:
             if user['Databases']:
                 dbs = user['Databases']
+            logger.debug("Creating database user %s on %s" % (user['Name'],
+                         str(self)))
             instance.create_user(user['Name'], user['Password'], dbs)
-            logger.info("Cloud database user %s created successfully" %
-                        (user['Name']))
+            logger.info("Database user %s created successfully on %s" %
+                        (user['Name'], str(self)))
         return True
 
     def handle_delete(self):
         '''
         Delete a Rackspace Cloud DB Instance.
         '''
-        logger.debug("CloudDBInstance handle_delete called.")
         if self.resource_id is None:
             return
 
         try:
             instances = self.cloud_db().delete(self.resource_id)
+            logger.debug("deleted %s" % str(self))
         except NotFound:
             pass
         self.resource_id = None
