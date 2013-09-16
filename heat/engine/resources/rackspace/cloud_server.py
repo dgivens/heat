@@ -322,6 +322,8 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
 
         # Save resource ID to db
         self.resource_id_set(server.id)
+        logger.debug("%s [%s] creation begun for stack %s" % (str(self),
+                     server.id, self.stack.id))
 
         return server, scheduler.TaskRunner(self._attach_volumes_task())
 
@@ -378,6 +380,8 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
             cmd = "bash -ex /root/heat-script.sh > /root/heat-script.log 2>&1"
             self._run_ssh_command(cmd)
 
+        logger.debug("Create of %s [%s] completed for stack %s" % (str(self),
+                     self.id, self.stack.id))
         return True
 
     # TODO(jason): Make this consistent with Instance and inherit
@@ -412,6 +416,8 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
             logger.info("Cloud Server rename not supported.")
 
         if 'Metadata' in tmpl_diff:
+            logger.debug("Updating metadata for %s [%s] of stack %s" % 
+                         (str(self), self.resource_id, self.stack.id))
             self.metadata = json_snippet['Metadata']
             metadata_string = json.dumps(self.metadata)
 
@@ -429,6 +435,8 @@ zypper --non-interactive in cloud-init python-boto python-pip gcc python-devel
             resize = scheduler.TaskRunner(nova_utils.check_resize,
                                           self.server,
                                           self.flavor)
+            logger.info("Starting resize of %s [%s] of stack %s" % (str(self),
+                        self.resource_id, self.stack.id))
             resize.start()
             return resize
 
